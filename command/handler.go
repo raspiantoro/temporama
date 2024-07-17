@@ -16,6 +16,7 @@ func Registers() resp.CommandHandler {
 	mux.HandleFunc("hello", Hello)
 	mux.HandleFunc("get", Get)
 	mux.HandleFunc("set", Set)
+	mux.HandleFunc("del", Delete)
 	mux.HandleFunc("hmget", HmGet)
 	mux.HandleFunc("hmset", HmSet)
 
@@ -67,7 +68,7 @@ func Hello(cmd resp.Command) resp.ValueNode {
 	}
 
 	if key == "3" {
-		response = resp.NewValueNode(resp.ValueNodeTypeArray)
+		response = resp.NewValueNode(resp.ValueNodeTypeMaps)
 		proto = "3"
 	} else {
 		response = resp.NewValueNode(resp.ValueNodeTypeArray)
@@ -214,6 +215,14 @@ func Set(cmd resp.Command) resp.ValueNode {
 	return resp.NewValueNode(
 		resp.ValueNodeTypeSimpleString,
 		resp.WithValue("OK"),
+	)
+}
+
+func Delete(cmd resp.Command) resp.ValueNode {
+	response := memstore.Delete(cmd.Key())
+	return resp.NewValueNode(
+		resp.ValueNodeTypeIntegers,
+		resp.WithValue(response),
 	)
 }
 

@@ -13,6 +13,7 @@ const (
 	ValueNodeTypeSimpleString ValueNodeType = "+"
 	ValueNodeTypeSimpleError  ValueNodeType = "-"
 	ValueNodeTypeIntegers     ValueNodeType = ":"
+	ValueNodeTypeMaps         ValueNodeType = "%"
 )
 
 type ValueNode struct {
@@ -59,6 +60,8 @@ func (v *ValueNode) Marshal() []byte {
 		result = v.marshalIntegers()
 	case ValueNodeTypeSimpleError:
 		result = v.marshalSimpleError()
+	case ValueNodeTypeMaps:
+		result = v.marshalMaps()
 	}
 
 	return result
@@ -110,6 +113,18 @@ func (v *ValueNode) marshalArray() []byte {
 	result := []byte{}
 
 	result = append(result, []byte(fmt.Sprintf("%s%d\r\n", v.types, len(v.nodes)))...)
+
+	for _, node := range v.nodes {
+		result = append(result, node.Marshal()...)
+	}
+
+	return result
+}
+
+func (v *ValueNode) marshalMaps() []byte {
+	result := []byte{}
+
+	result = append(result, []byte(fmt.Sprintf("%s%d\r\n", v.types, len(v.nodes)/2))...)
 
 	for _, node := range v.nodes {
 		result = append(result, node.Marshal()...)

@@ -26,6 +26,11 @@ func Set(valueType ValueType, key string, args ...string) error {
 	return storage.Set(valueType, key, args...)
 }
 
+func Delete(key string) string {
+	delete(storage.entries, key)
+	return "1"
+}
+
 type Storage struct {
 	entries map[string]any
 }
