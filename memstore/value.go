@@ -7,21 +7,21 @@ const (
 	ValueTypeMap    ValueType = "map"
 )
 
-type valueType[T any] ValueType
+// type valueType[T any] ValueType
 
-const (
-	valueTypeString valueType[valueString] = valueType[valueString](ValueTypeString)
-	valueTypeMap    valueType[valueMap]    = valueType[valueMap](ValueTypeMap)
-)
+// const (
+// 	valueTypeString valueType[valueString] = valueType[valueString](ValueTypeString)
+// 	valueTypeMap    valueType[valueMap]    = valueType[valueMap](ValueTypeMap)
+// )
 
-type Value[T any] struct {
-	types valueType[T]
-	value[T]
-}
+// type Value[T any] struct {
+// 	types valueType[T]
+// 	value[T]
+// }
 
-type value[T any] struct {
-	internal T
-}
+// type value[T any] struct {
+// 	internal T
+// }
 
 type valueString struct {
 	val string

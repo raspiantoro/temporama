@@ -44,9 +44,9 @@ func (s Storage) validate(valueType ValueType, key string) error {
 	var valid bool
 	switch valueType {
 	case ValueTypeString:
-		_, valid = container.(Value[valueString])
+		_, valid = container.(valueString)
 	case ValueTypeMap:
-		_, valid = container.(Value[valueMap])
+		_, valid = container.(valueMap)
 	default:
 		return errors.New("unknown value type")
 	}
@@ -74,31 +74,17 @@ func (s Storage) Set(valueType ValueType, key string, args ...string) error {
 	return nil
 }
 
-func (s Storage) setString(arg string) Value[valueString] {
-	val := Value[valueString]{
-		types: valueTypeString,
-		value: value[valueString]{
-			internal: valueString{},
-		},
+func (s Storage) setString(arg string) valueString {
+	return valueString{
+		val: arg,
 	}
-
-	val.internal.set(arg)
-
-	return val
 }
 
-func (s Storage) setMap(args ...string) Value[valueMap] {
-	val := Value[valueMap]{
-		types: valueTypeMap,
-		value: value[valueMap]{
-			internal: valueMap{
-				val: make(map[string]string),
-			},
-		},
+func (s Storage) setMap(args ...string) valueMap {
+	val := valueMap{
+		val: make(map[string]string),
 	}
-
-	val.internal.set(args...)
-
+	val.set(args...)
 	return val
 }
 
@@ -123,8 +109,8 @@ func (s Storage) getString(key string) (string, error) {
 	if !ok {
 		return "", ErrNilEntries
 	}
-	valContainer := container.(Value[valueString])
-	val := valContainer.internal.get()
+	valContainer := container.(valueString)
+	val := valContainer.get()
 	return val, nil
 }
 
@@ -134,7 +120,7 @@ func (s Storage) getMap(key string, args ...string) ([]string, error) {
 		return nil, ErrNilEntries
 	}
 
-	valContainer := container.(Value[valueMap])
-	val := valContainer.internal.get(args...)
+	valContainer := container.(valueMap)
+	val := valContainer.get(args...)
 	return val, nil
 }
