@@ -14,7 +14,7 @@ While Temporama is still a work in progress, it currently supports only a limite
 - HGET
 - HSET
 - HGETALL
-- HELLO (for handshake)
+- HELLO (for handshake and RESP protocol switch between versions 2 and 3)
 - PING
 
 Similar to Redis, Temporama also supports command pipelining, allowing multiple commands to be sent in a single request by the client.

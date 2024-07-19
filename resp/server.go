@@ -72,13 +72,15 @@ loop:
 			}
 		}
 
-		go s.handle(conn)
+		cn := NewConnection(conn)
+
+		go s.handle(cn)
 	}
 
 	return nil
 }
 
-func (s *Server) handle(conn net.Conn) {
+func (s *Server) handle(conn *Connection) {
 	buf := make([]byte, 4096)
 	for {
 		n, err := conn.Read(buf)
@@ -124,7 +126,7 @@ func (s *Server) handle(conn net.Conn) {
 				cmdStrs = append(cmdStrs, node.val)
 			}
 
-			cmd := NewCommand(strings.ToLower(cmdStrs[0]), 3, cmdStrs[1:]...)
+			cmd := NewCommand(strings.ToLower(cmdStrs[0]), conn, cmdStrs[1:]...)
 
 			response := s.handler.Serve(cmd)
 

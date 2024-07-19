@@ -58,8 +58,12 @@ func Hello(cmd resp.Command) resp.ValueNode {
 		)
 	}
 
+	if key != "" {
+		proto, _ := strconv.Atoi(key)
+		cmd.SetProto(proto)
+	}
+
 	var response resp.ValueNode
-	var proto string
 
 	mode := os.Getenv("MODE")
 	if mode == "" {
@@ -71,12 +75,10 @@ func Hello(cmd resp.Command) resp.ValueNode {
 		role = "master"
 	}
 
-	if key == "3" {
+	if cmd.Proto() == 3 {
 		response = resp.NewValueNode(resp.ValueNodeTypeMaps)
-		proto = "3"
 	} else {
 		response = resp.NewValueNode(resp.ValueNodeTypeArray)
-		proto = "2"
 	}
 
 	response.Append(resp.NewValueNode(
@@ -106,7 +108,7 @@ func Hello(cmd resp.Command) resp.ValueNode {
 
 	response.Append(resp.NewValueNode(
 		resp.ValueNodeTypeBulkString,
-		resp.WithValue(proto),
+		resp.WithValue(strconv.Itoa(cmd.Proto())),
 	))
 
 	response.Append(resp.NewValueNode(
@@ -387,16 +389,10 @@ func HGet(cmd resp.Command) resp.ValueNode {
 
 	vals := val.([]string)
 
-	response := resp.NewValueNode(resp.ValueNodeTypeArray)
-
-	for _, v := range vals {
-		child := resp.NewValueNode(
-			resp.ValueNodeTypeBulkString,
-			resp.WithValue(v),
-		)
-
-		response.Append(child)
-	}
+	response := resp.NewValueNode(
+		resp.ValueNodeTypeBulkString,
+		resp.WithValue(vals[0]),
+	)
 
 	return response
 }
