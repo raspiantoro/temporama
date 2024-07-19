@@ -6,11 +6,14 @@ Disclaimer: Temporama is still a work in progress. While it is functional, it cu
 
 ## Current Supported Command
 While Temporama is still a work in progress, it currently supports only a limited set of commands:
-- Get
-- Set
-- Delete
+- GET
+- SET
+- DEL
 - HMGET
 - HMSET
+- HGET
+- HSET
+- HGETALL
 - HELLO (for handshake)
 - PING
 

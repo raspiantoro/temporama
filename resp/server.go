@@ -124,7 +124,7 @@ func (s *Server) handle(conn net.Conn) {
 				cmdStrs = append(cmdStrs, node.val)
 			}
 
-			cmd := NewCommand(strings.ToLower(cmdStrs[0]), cmdStrs[1:]...)
+			cmd := NewCommand(strings.ToLower(cmdStrs[0]), 3, cmdStrs[1:]...)
 
 			response := s.handler.Serve(cmd)
 

@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/raspiantoro/temporama/info"
 	"github.com/raspiantoro/temporama/memstore"
@@ -19,6 +20,9 @@ func Registers() resp.CommandHandler {
 	mux.HandleFunc("del", Delete)
 	mux.HandleFunc("hmget", HmGet)
 	mux.HandleFunc("hmset", HmSet)
+	mux.HandleFunc("hgetall", HGetAll)
+	mux.HandleFunc("hset", HSet)
+	mux.HandleFunc("hget", HGet)
 
 	return mux
 }
@@ -204,7 +208,7 @@ func Set(cmd resp.Command) resp.ValueNode {
 		)
 	}
 
-	err := memstore.Set(memstore.ValueTypeString, cmd.Key(), cmd.Args()...)
+	_, err := memstore.Set(memstore.ValueTypeString, cmd.Key(), cmd.Args()...)
 	if err != nil {
 		return resp.NewValueNode(
 			resp.ValueNodeTypeSimpleError,
@@ -237,7 +241,7 @@ func HmGet(cmd resp.Command) resp.ValueNode {
 	val, err := memstore.Get(memstore.ValueTypeMap, cmd.Key(), cmd.Args()...)
 	if err == memstore.ErrNilEntries {
 		return resp.NewValueNode(
-			resp.ValueNodeTypeBulkString,
+			resp.ValueNodeTypeArray,
 			resp.WithValue("-1"),
 		)
 	}
@@ -272,7 +276,7 @@ func HmSet(cmd resp.Command) resp.ValueNode {
 		)
 	}
 
-	err := memstore.Set(memstore.ValueTypeMap, cmd.Key(), cmd.Args()...)
+	_, err := memstore.Set(memstore.ValueTypeMap, cmd.Key(), cmd.Args()...)
 	if err != nil {
 		return resp.NewValueNode(
 			resp.ValueNodeTypeSimpleError,
@@ -284,4 +288,115 @@ func HmSet(cmd resp.Command) resp.ValueNode {
 		resp.ValueNodeTypeSimpleString,
 		resp.WithValue("OK"),
 	)
+}
+
+func HGetAll(cmd resp.Command) resp.ValueNode {
+	if cmd.Key() == "" || len(cmd.Args()) > 0 {
+		return resp.NewValueNode(
+			resp.ValueNodeTypeSimpleError,
+			resp.WithValue("ERROR: wrong arguments number for 'hgetall' command"),
+		)
+	}
+
+	val, err := memstore.Get(memstore.ValueTypeMap, cmd.Key())
+	if err == memstore.ErrNilEntries {
+		if cmd.Proto() == 2 {
+			return resp.NewValueNode(
+				resp.ValueNodeTypeArray,
+				resp.WithValue("-1"),
+			)
+		} else {
+			return resp.NewValueNode(
+				resp.ValueNodeTypeMaps,
+				resp.WithValue("-1"),
+			)
+		}
+	}
+	if err != nil {
+		return resp.NewValueNode(
+			resp.ValueNodeTypeSimpleError,
+			resp.WithValue(fmt.Sprintf("ERROR: %s", err.Error())),
+		)
+	}
+
+	vals := val.([]string)
+
+	var response resp.ValueNode
+
+	if cmd.Proto() == 2 {
+		response = resp.NewValueNode(resp.ValueNodeTypeArray)
+	} else {
+		response = resp.NewValueNode(resp.ValueNodeTypeMaps)
+	}
+
+	for _, v := range vals {
+		child := resp.NewValueNode(
+			resp.ValueNodeTypeBulkString,
+			resp.WithValue(v),
+		)
+
+		response.Append(child)
+	}
+
+	return response
+}
+
+func HSet(cmd resp.Command) resp.ValueNode {
+	if cmd.Key() == "" || len(cmd.Args()) <= 0 {
+		return resp.NewValueNode(
+			resp.ValueNodeTypeSimpleError,
+			resp.WithValue("ERROR: wrong arguments number for 'hset' command"),
+		)
+	}
+
+	newFieldNum, err := memstore.Set(memstore.ValueTypeMap, cmd.Key(), cmd.Args()...)
+	if err != nil {
+		return resp.NewValueNode(
+			resp.ValueNodeTypeSimpleError,
+			resp.WithValue(fmt.Sprintf("ERROR: %s", err.Error())),
+		)
+	}
+
+	return resp.NewValueNode(
+		resp.ValueNodeTypeIntegers,
+		resp.WithValue(strconv.Itoa(newFieldNum)),
+	)
+}
+
+func HGet(cmd resp.Command) resp.ValueNode {
+	if cmd.Key() == "" || len(cmd.Args()) != 1 {
+		return resp.NewValueNode(
+			resp.ValueNodeTypeSimpleError,
+			resp.WithValue("ERROR: wrong arguments number for 'hget' command"),
+		)
+	}
+
+	val, err := memstore.Get(memstore.ValueTypeMap, cmd.Key(), cmd.Args()...)
+	if err == memstore.ErrNilEntries {
+		return resp.NewValueNode(
+			resp.ValueNodeTypeArray,
+			resp.WithValue("-1"),
+		)
+	}
+	if err != nil {
+		return resp.NewValueNode(
+			resp.ValueNodeTypeSimpleError,
+			resp.WithValue(fmt.Sprintf("ERROR: %s", err.Error())),
+		)
+	}
+
+	vals := val.([]string)
+
+	response := resp.NewValueNode(resp.ValueNodeTypeArray)
+
+	for _, v := range vals {
+		child := resp.NewValueNode(
+			resp.ValueNodeTypeBulkString,
+			resp.WithValue(v),
+		)
+
+		response.Append(child)
+	}
+
+	return response
 }

@@ -43,14 +43,16 @@ func (m *Mux) Serve(cmd Command) ValueNode {
 }
 
 type Command struct {
-	name string
-	args []string
+	proto uint
+	name  string
+	args  []string
 }
 
-func NewCommand(name string, args ...string) Command {
+func NewCommand(name string, proto uint, args ...string) Command {
 	return Command{
-		name: name,
-		args: args,
+		proto: proto,
+		name:  name,
+		args:  args,
 	}
 }
 
@@ -80,4 +82,8 @@ func (c *Command) Args() []string {
 	}
 
 	return val
+}
+
+func (c *Command) Proto() uint {
+	return c.proto
 }

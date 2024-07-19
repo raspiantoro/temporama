@@ -7,22 +7,6 @@ const (
 	ValueTypeMap    ValueType = "map"
 )
 
-// type valueType[T any] ValueType
-
-// const (
-// 	valueTypeString valueType[valueString] = valueType[valueString](ValueTypeString)
-// 	valueTypeMap    valueType[valueMap]    = valueType[valueMap](ValueTypeMap)
-// )
-
-// type Value[T any] struct {
-// 	types valueType[T]
-// 	value[T]
-// }
-
-// type value[T any] struct {
-// 	internal T
-// }
-
 type valueString struct {
 	val string
 }
@@ -31,8 +15,8 @@ func (v *valueString) get() string {
 	return v.val
 }
 
-func (v *valueString) set(val string) {
-	v.val = val
+func (v *valueString) set(arg string) {
+	v.val = arg
 }
 
 type valueMap struct {
@@ -40,28 +24,52 @@ type valueMap struct {
 }
 
 func (v *valueMap) get(keys ...string) []string {
+	if len(keys) <= 0 {
+		return v.getAll()
+	}
+
 	ret := []string{}
 
 	for _, key := range keys {
-		v, ok := v.val[key]
+		val, ok := v.val[key]
 		if !ok {
 			if key == "" {
 				continue
 			}
 
-			v = "-1"
+			val = "-1"
 		}
-		ret = append(ret, v)
+		ret = append(ret, val)
 	}
 
 	return ret
 }
 
-func (v *valueMap) set(args ...string) {
+func (v *valueMap) getAll() []string {
+	ret := []string{}
+
+	for key, val := range v.val {
+		ret = append(ret, key)
+		ret = append(ret, val)
+	}
+
+	return ret
+}
+
+func (v *valueMap) set(args ...string) int {
+	newFieldNum := 0
+
 	for i := 0; i < len(args); i += 2 {
 		if args[i] == "" {
 			continue
 		}
+
+		if _, ok := v.val[args[i]]; !ok {
+			newFieldNum++
+		}
+
 		v.val[args[i]] = args[i+1]
 	}
+
+	return newFieldNum
 }
