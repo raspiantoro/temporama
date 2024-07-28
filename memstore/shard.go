@@ -183,7 +183,8 @@ func (s *Shard) Delete(key string) {
 		return
 	}
 
-	node.Delete(hashKey, blockNum, key)
+	node.Delete(blockNum, hashKey, key)
+	// s.printInfo()
 }
 
 type ShardNode interface {
