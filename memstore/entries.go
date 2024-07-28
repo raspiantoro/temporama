@@ -158,15 +158,15 @@ func (e *EntryNode) setMap(args ...string) (int, error) {
 func (e *EntryNode) Get(valueType ValueType, key string, args ...string) (any, error) {
 	switch valueType {
 	case ValueTypeString:
-		return e.getString(key)
+		return e.getString()
 	case ValueTypeMap:
-		return e.getMap(key, args...)
+		return e.getMap(args...)
 	}
 
 	return nil, nil
 }
 
-func (e *EntryNode) getString(key string) (string, error) {
+func (e *EntryNode) getString() (string, error) {
 	container := e.val
 	if container == nil {
 		return "", ErrNilEntries
@@ -181,7 +181,7 @@ func (e *EntryNode) getString(key string) (string, error) {
 	return val, nil
 }
 
-func (e *EntryNode) getMap(key string, args ...string) ([]string, error) {
+func (e *EntryNode) getMap(args ...string) ([]string, error) {
 	container := e.val
 	if container == nil {
 		return nil, ErrNilEntries

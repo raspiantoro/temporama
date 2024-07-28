@@ -39,15 +39,27 @@ func init() {
 }
 
 func Get(valueType ValueType, key string, args ...string) (any, error) {
-	return shard.Get(valueType, key, args...)
+	crcTable := crc32.MakeTable(IEEE)
+	hashKey := crc32.Checksum([]byte(key), crcTable)
+	blockNum := hashKey % MaxShardBlock
+
+	return shard.Get(valueType, blockNum, hashKey, key, args...)
 }
 
 func Set(valueType ValueType, key string, args ...string) (int, error) {
-	return shard.Set(valueType, key, args...)
+	crcTable := crc32.MakeTable(IEEE)
+	hashKey := crc32.Checksum([]byte(key), crcTable)
+	blockNum := hashKey % MaxShardBlock
+
+	return shard.Set(valueType, blockNum, hashKey, key, args...)
 }
 
 func Delete(key string) string {
-	shard.Delete(key)
+	crcTable := crc32.MakeTable(IEEE)
+	hashKey := crc32.Checksum([]byte(key), crcTable)
+	blockNum := hashKey % MaxShardBlock
+
+	shard.Delete(blockNum, hashKey, key)
 	return "1"
 }
 
@@ -145,11 +157,7 @@ func (s *Shard) assignNode(numNode, startRange, fairNumBlocks, extra uint32) uin
 	return end
 }
 
-func (s *Shard) Get(valueType ValueType, key string, args ...string) (any, error) {
-	crcTable := crc32.MakeTable(IEEE)
-	hashKey := crc32.Checksum([]byte(key), crcTable)
-	blockNum := hashKey % MaxShardBlock
-
+func (s *Shard) Get(valueType ValueType, blockNum, hashKey uint32, key string, args ...string) (any, error) {
 	node := s.getNode(blockNum)
 	if node == nil {
 		return nil, ErrNilEntries
@@ -158,11 +166,7 @@ func (s *Shard) Get(valueType ValueType, key string, args ...string) (any, error
 	return node.Get(valueType, blockNum, hashKey, key, args...)
 }
 
-func (s *Shard) Set(valueType ValueType, key string, args ...string) (int, error) {
-	crcTable := crc32.MakeTable(IEEE)
-	hashKey := crc32.Checksum([]byte(key), crcTable)
-	blockNum := hashKey % MaxShardBlock
-
+func (s *Shard) Set(valueType ValueType, blockNum, hashKey uint32, key string, args ...string) (int, error) {
 	node := s.getNode(blockNum)
 	if node == nil {
 		return 0, ErrNilEntries
@@ -173,11 +177,7 @@ func (s *Shard) Set(valueType ValueType, key string, args ...string) (int, error
 	return n, e
 }
 
-func (s *Shard) Delete(key string) {
-	crcTable := crc32.MakeTable(IEEE)
-	hashKey := crc32.Checksum([]byte(key), crcTable)
-	blockNum := hashKey % MaxShardBlock
-
+func (s *Shard) Delete(blockNum, hashKey uint32, key string) {
 	node := s.getNode(blockNum)
 	if node == nil {
 		return
