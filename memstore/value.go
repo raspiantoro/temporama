@@ -1,10 +1,10 @@
 package memstore
 
-type ValueType string
+type ValueType int
 
 const (
-	ValueTypeString ValueType = "string"
-	ValueTypeMap    ValueType = "map"
+	ValueTypeString ValueType = iota
+	ValueTypeMap
 )
 
 type valueString struct {

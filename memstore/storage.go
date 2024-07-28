@@ -8,133 +8,143 @@ var (
 	ErrNilEntries = errors.New("nil entries")
 )
 
-var (
-	storage Storage
-)
-
-func init() {
-	storage = Storage{
-		entries: make(map[string]any),
-	}
-}
-
-func Get(valueType ValueType, key string, args ...string) (any, error) {
-	return storage.Get(valueType, key, args...)
-}
-
-func Set(valueType ValueType, key string, args ...string) (int, error) {
-	return storage.Set(valueType, key, args...)
-}
-
-func Delete(key string) string {
-	delete(storage.entries, key)
-	return "1"
-}
-
 type Storage struct {
-	entries map[string]any
+	entries map[uint32]EntryNode
 }
 
-func (s Storage) Set(valueType ValueType, key string, args ...string) (newFieldNum int, err error) {
-	switch valueType {
-	case ValueTypeString:
-		err = s.setString(key, args[0])
-	case ValueTypeMap:
-		newFieldNum, err = s.setMap(key, args...)
+func (s Storage) Delete(hashKey uint32, key string) {
+	var entry EntryNode
+
+	entry, ok := s.entries[hashKey]
+	if !ok {
+		return
 	}
+
+	newEntry := entry.Delete(key, nil)
+	if newEntry == nil {
+		delete(s.entries, hashKey)
+	} else {
+		s.entries[hashKey] = *newEntry
+	}
+}
+
+func (s Storage) Set(valueType ValueType, hashKey uint32, key string, args ...string) (newFieldNum int, err error) {
+	var entry EntryNode
+
+	entry = s.entries[hashKey]
+	// if !ok {
+	// 	entry = EntryNode{
+	// 		key: key,
+	// 	}
+	// 	s.entries[hashKey] = entry
+	// }
+
+	newFieldNum, err = entry.Set(valueType, key, args...)
+	if err != nil {
+		return 0, err
+	}
+
+	s.entries[hashKey] = entry
 
 	return
 }
 
-func (s Storage) setString(key, arg string) error {
-	var val valueString
-	_, ok := s.entries[key]
-	if ok {
-		val, ok = s.entries[key].(valueString)
-		if !ok {
-			return errors.New("invalid operations for the value type")
-		}
+// func (s Storage) setString(key, arg string) error {
+// 	var val valueString
+// 	_, ok := s.entries[key]
+// 	if ok {
+// 		val, ok = s.entries[key].(valueString)
+// 		if !ok {
+// 			return errors.New("invalid operations for the value type")
+// 		}
 
-		val.set(arg)
-		s.entries[key] = val
+// 		val.set(arg)
+// 		s.entries[key] = val
 
-		return nil
-	}
+// 		return nil
+// 	}
 
-	val = valueString{
-		val: arg,
-	}
+// 	val = valueString{
+// 		val: arg,
+// 	}
 
-	s.entries[key] = val
-	return nil
-}
+// 	s.entries[key] = val
+// 	return nil
+// }
 
-func (s Storage) setMap(key string, args ...string) (int, error) {
-	var (
-		newFieldNum int
-		val         valueMap
-	)
+// func (s Storage) setMap(key string, args ...string) (int, error) {
+// 	var (
+// 		newFieldNum int
+// 		val         valueMap
+// 	)
 
-	_, ok := s.entries[key]
-	if ok {
-		val, ok = s.entries[key].(valueMap)
-		if !ok {
-			return newFieldNum, errors.New("invalid operations for the value type")
-		}
+// 	_, ok := s.entries[key]
+// 	if ok {
+// 		val, ok = s.entries[key].(valueMap)
+// 		if !ok {
+// 			return newFieldNum, errors.New("invalid operations for the value type")
+// 		}
 
-		newFieldNum = val.set(args...)
-		s.entries[key] = val
+// 		newFieldNum = val.set(args...)
+// 		s.entries[key] = val
 
-		return newFieldNum, nil
-	}
+// 		return newFieldNum, nil
+// 	}
 
-	val = valueMap{
-		val: make(map[string]string),
-	}
+// 	val = valueMap{
+// 		val: make(map[string]string),
+// 	}
 
-	newFieldNum = val.set(args...)
-	s.entries[key] = val
+// 	newFieldNum = val.set(args...)
+// 	s.entries[key] = val
 
-	return newFieldNum, nil
-}
+// 	return newFieldNum, nil
+// }
 
-func (s Storage) Get(valueType ValueType, key string, args ...string) (any, error) {
-	switch valueType {
-	case ValueTypeString:
-		return s.getString(key)
-	case ValueTypeMap:
-		return s.getMap(key, args...)
-	}
+func (s Storage) Get(valueType ValueType, hashKey uint32, key string, args ...string) (any, error) {
+	// switch valueType {
+	// case ValueTypeString:
+	// 	return s.getString(key)
+	// case ValueTypeMap:
+	// 	return s.getMap(key, args...)
+	// }
 
-	return nil, nil
-}
+	var entry EntryNode
 
-func (s Storage) getString(key string) (string, error) {
-	container, ok := s.entries[key]
-	if !ok {
-		return "", ErrNilEntries
-	}
-
-	valContainer, ok := container.(valueString)
-	if !ok {
-		return "", errors.New("invalid operations for the value type")
-	}
-
-	val := valContainer.get()
-	return val, nil
-}
-
-func (s Storage) getMap(key string, args ...string) ([]string, error) {
-	container, ok := s.entries[key]
+	entry, ok := s.entries[hashKey]
 	if !ok {
 		return nil, ErrNilEntries
 	}
 
-	valContainer, ok := container.(valueMap)
-	if !ok {
-		return nil, errors.New("invalid operations for the value type")
-	}
-
-	val := valContainer.get(args...)
-	return val, nil
+	return entry.Get(valueType, key, args...)
 }
+
+// func (s Storage) getString(key string) (string, error) {
+// 	container, ok := s.entries[key]
+// 	if !ok {
+// 		return "", ErrNilEntries
+// 	}
+
+// 	valContainer, ok := container.(valueString)
+// 	if !ok {
+// 		return "", errors.New("invalid operations for the value type")
+// 	}
+
+// 	val := valContainer.get()
+// 	return val, nil
+// }
+
+// func (s Storage) getMap(key string, args ...string) ([]string, error) {
+// 	container, ok := s.entries[key]
+// 	if !ok {
+// 		return nil, ErrNilEntries
+// 	}
+
+// 	valContainer, ok := container.(valueMap)
+// 	if !ok {
+// 		return nil, errors.New("invalid operations for the value type")
+// 	}
+
+// 	val := valContainer.get(args...)
+// 	return val, nil
+// }
